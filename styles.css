@@ -1,0 +1,203 @@
+html {
+  overscroll-behavior: none;
+}
+
+body {
+  position: fixed;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  font-family: Avenir, Helvetica, sans-serif;
+  font-size: 1em;
+  line-height: 1.3em;
+  color: #fff;
+  background-color: #000;
+  transition-property: background-color;
+  transition-duration: 4s;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+/**********************************************************
+ * player
+ */
+#player-title {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1em;
+  margin-top: -0.5em;
+  font-size: 3em;
+  font-weight: 500;
+  text-align: center;
+}
+
+#player-message {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  margin-top: -4em;
+  line-height: 1em;
+  font-size: 1.33em;
+  text-align: center;
+}
+
+bottom {
+  top: calc(100% - 1.5em);
+}
+
+.fullscreen {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.translucent {
+  opacity: 0;
+}
+
+
+#player-message span.huge {
+  font-size: 3rem;
+  line-height: 1.333em;
+}
+
+#player-message span.big {
+  font-size: 2rem;
+}
+
+#player-message.bottom {
+  top: 95%;
+}
+
+/**********************************************************
+ * controller
+ */
+body.controller {
+  margin-top: 1em;
+}
+
+.controller-param {
+  width: 100%;
+  height: 2em;
+  pointer-events: none;
+  margin-top: 0.5em;
+}
+
+.controller-param .label {
+  display: inline-block;
+  width: 4em;
+  text-align: right;
+  pointer-events: all;
+  margin-right: 0.3em;
+}
+
+.controller-param .number {
+  display: inline-block;
+  margin-left: 0.3em;
+}
+
+.controller-param .slider {
+  display: inline-block;
+  position: relative;
+  top: 0.4em;
+  width: calc(100% - 10em);
+  height: 1.2em;
+  cursor: pointer;
+  border-style: solid;
+  border-width: 0.5px;
+  border-radius: 0.1em;
+  pointer-events: all;
+}
+
+.controller-param .slider-value {
+  position: absolute;
+  top: 0;
+  left: 0%;
+  width: 0;
+  height: 100%;
+  border-right-style: solid;
+  border-left-style: solid;
+  border-width: 1px;
+  border-radius: 0.1em;
+  border-color: turquoise;
+  background-color: turquoise;
+  pointer-events: none;
+}
+
+.controller-param .toggle {
+  display: inline-block;
+  position: relative;
+  top: 0.4em;
+  width: 1.2em;
+  height: 1.2em;
+  cursor: pointer;
+  border-style: solid;
+  border-width: 0.5px;
+  border-radius: 0.1em;
+  background-color: transparent;
+  pointer-events: all;
+}
+
+.controller-param .toggle[data-active="true"] {
+  background-color: turquoise;
+}
+
+.controller-param .toggle[data-active="true"] {
+  background-color: turquoise;
+}
+
+.controller-param .button {
+  display: inline-block;
+  position: relative;
+  width: fit-content;
+  padding: 0.1em 0.5em;
+  border-style: solid;
+  border-width: 0.5px;
+  border-radius: 1px;
+  border-color: #fff;
+  background-color: black;
+  color: white;
+  pointer-events: none;
+  opacity: 1;
+  z-index: 1;
+  text-align: center;
+  pointer-events: all;
+}
+
+.button.active {
+  background-color: turquoise;
+}
+
+.controller-param[data-name="player-count"], .controller-param[data-name="ready-count"] {
+  display: inline;
+  pointer-events: none;
+  margin-left: 2em;
+  color: #fff;
+}
+
+#player-count #ready-count {
+  display: inline-block;
+  width: 2em;
+  font-size: 1.1em;
+  text-align: right;
+}
+
+.button[data-name="clear"] {
+  display: inline-block;
+  margin-left: 4.6em;
+}
+
+.button[data-name="end"], .button[data-name="reset"] {
+  display: inline-block;
+}

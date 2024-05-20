@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+  <title>Drops | Controller</title>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="drops.png">
+  <script language="JavaScript" type="module" src="controller.js" defer></script>
+</head>
+
+<body class="controller">
+  <div data-name="player-count" class="controller-param">
+    <span id="player-count">0</span>
+    <span>player(s)</span>
+  </div>
+
+  <div data-name="ready-count" class="controller-param">
+    <span id="ready-count">0</span>
+    <span>ready</span>
+  </div>
+
+  <div class="controller-param" data-name="max-drops">
+    <span class="label">drops</span>
+    <span class="slider"><span class="slider-value"></span></span>
+    <span class="number"></span>
+  </div>
+
+  <div class="controller-param" data-name="division">
+    <span class="label">division</span>
+    <span class="slider"><span class="slider-value"></span></span>
+    <span class="number"></span>
+  </div>
+
+  <div class="controller-param" data-name="period">
+    <span class="label">period</span>
+    <span class="slider"><span class="slider-value"></span></span>
+    <span class="number"></span>
+    <span class="unit">sec</span>
+  </div>
+
+  <div class="controller-param" data-name="attenuation">
+    <span class="label">atten</span>
+    <span class="slider"><span class="slider-value bipolar"></span></span>
+    <span class="number"></span>
+  </div>
+
+  <div class="controller-param" data-name="off-gain">
+    <span class="label">off</span>
+    <span class="slider"><span class="slider-value"></span></span>
+    <span class="number"></span>
+  </div>
+
+  <div class="controller-param" data-name="gain">
+    <span class="label">gain</span>
+    <span class="slider"><span class="slider-value"></span></span>
+    <span class="number"></span>
+  </div>
+
+  <div class="controller-param" data-name="active">
+    <span class="label">active</span>
+    <span class="toggle"></span>
+  </div>
+
+  <div class="controller-param" data-name="clear">
+    <span class="button" data-name="clear" data-message="clear-all">clear</span>
+  </div>
+</body>
+
+</html>

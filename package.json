@@ -1,0 +1,10 @@
+{
+  "name": "drops",
+  "type": "module",
+  "description": "Drops - collective mobile sound performance.",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^7.4.4"
+  }
+}
