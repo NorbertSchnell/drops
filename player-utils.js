@@ -1,18 +1,19 @@
 let audioContext = null;
 let getSyncTime = null;
+let getAudioTime = null;
 let scheduler = null;
+let startTime = null;
 
-export function startAudio(ac, timeFunction, buffers) {
-  audioContext = ac
-  getSyncTime = timeFunction;
+export function startAudio(context, syncTimeFunction, convertTimeFunction) {
+  audioContext = context
+  getSyncTime = syncTimeFunction;
+  getAudioTime = convertTimeFunction;
 
   if (scheduler === null) {
     scheduler = new SimpleScheduler();
   }
 
-  if (audioBuffers === null) {
-    audioBuffers = buffers;
-  }
+  startTime = audioContext.currentTime;
 }
 
 /*************************************************
@@ -201,7 +202,6 @@ class Loop extends TimeEngine {
 export class Looper {
   constructor(renderer, loopParams, updateCount = null) {
     this.renderer = new CircleRenderer();
-    // this.synth = new SampleSynth(audioBuffers);
     this.synth = new FmSynth();
     // this.synth = new ModalSynth();
 
@@ -243,14 +243,14 @@ export class Looper {
     }
 
     // trigger sound
-    const audioTime = audioContext.currentTime;
-    const duration = this.synth.trigger(audioTime, soundParams, !loop.local);
+    const audioTime = getAudioTime(time);
+    this.synth.trigger(audioTime, soundParams, !loop.local);
 
     // trigger circle
     this.renderer.trigger(soundParams.index, soundParams.x, soundParams.y, {
       color: soundParams.index,
-      opacity: Math.sqrt(soundParams.gain),
-      duration: duration,
+      opacity: Math.sqrt(2 * soundParams.gain),
+      duration: soundParams.duration,
       velocity: 40 + soundParams.gain * 80,
     });
 
@@ -303,11 +303,8 @@ export class Looper {
 /*************************************************
  * synth
  */
-let audioBuffers = null;
-const pitches = [4800, 5000, 6400, 6600, 6800, 7000, 7200, 7400, 7600, 7800, 8000, 8200, 8400];
-
-var refFreq = 440;
-var refPitch = 6900;
+let refFreq = 440;
+let refPitch = 6900;
 
 function setTuning(freq = 440, pitch = 6900) {
   refFreq = freq;
@@ -319,63 +316,11 @@ function pitchToFreq(pitch) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-class SampleSynth {
-  constructor(audioBuffers) {
-    this.audioBuffers = audioBuffers;
-    this.output = audioContext.createGain();
-    this.output.connect(audioContext.destination);
-    this.output.gain.value = 1;
-  }
-
-  trigger(time, params, echo = false) {
-    const audioBuffers = this.audioBuffers;
-    let duration = 0;
-
-    if (audioBuffers && audioBuffers.length > 0) {
-      const x = params.x || 0.5;
-      const y = params.y || 0.5;
-
-      const index = Math.floor((1 - y) * 12);
-      const b1 = audioBuffers[2 * index];
-
-      duration += (1 - x) * b1.duration;
-
-      const g1 = audioContext.createGain();
-      g1.connect(this.output);
-      g1.gain.value = (1 - x) * params.gain;
-
-      const s1 = audioContext.createBufferSource();
-      s1.buffer = b1;
-      s1.connect(g1);
-      s1.start(time);
-
-      const b2 = audioBuffers[2 * index + 1];
-      duration += x * b2.duration;
-
-      const g2 = audioContext.createGain();
-      g2.connect(this.output);
-      g2.gain.value = x * params.gain;
-
-      const s2 = audioContext.createBufferSource();
-      s2.buffer = b2;
-      s2.connect(g2);
-      s2.start(time);
-    }
-
-    return duration;
-  }
-
-  setGain(value) {
-    this.output.gain.value = value;
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
 class FmSynth {
   constructor() {
     this.modIndex = 1; // moduation index
-    // this.freqRatio = 1.6180339886256; // modulator frequency / carrier frequency
     this.freqRatio = 1.414213562373095; // modulator frequency / carrier frequency
+    // this.freqRatio = 1.6180339886256; // modulator frequency / carrier frequency
     // this.freqRatio = 1.001; // modulator frequency / carrier frequency
 
     this.attack = 0.001;
@@ -393,13 +338,9 @@ class FmSynth {
   }
 
   trigger(time, params, echo = false) {
-    const now = audioContext.currentTime;
-    const x = Math.max(0, Math.min(1, params.x));
-    const y = Math.max(0, Math.min(1, (1 - params.y)));
-    const pitchIndex = Math.floor(y * pitches.length);
-    const pitch = pitches[pitchIndex];
-    const detune = 20;
-    const duration = Math.pow(2, 2 * x - 1) * this.duration;
+    const pitch = params.pitch;
+    const duration = params.duration;
+    const detune = 10;
     const attack = Math.min(this.attack, duration);
 
     const carFreq = pitchToFreq(pitch);
@@ -410,6 +351,8 @@ class FmSynth {
     const modDuration = duration * this.durationRatio;
     const modAttack = Math.min(attack * this.attackRatio, modDuration);
     const modIndex = this.modIndex;
+
+    time = Math.max(time, audioContext.currentTime + 0.005);
 
     const carEnv = audioContext.createGain();
     carEnv.connect(this.output);
@@ -445,7 +388,7 @@ class FmSynth {
       modOsc.stop(time + modDuration);
     }
 
-    return duration;
+    // console.log(time, audioContext.currentTime, time - audioContext.currentTime);
   }
 
   setGain(value) {
@@ -458,35 +401,17 @@ class ModalSynth {
   constructor() {
     this.partials = [{
       amplitude: 1,
-      attack: 0.004,
-      duration: 4,
+      attack: 1,
+      duration: 1,
       detune: 0,
     }, {
       amplitude: 1 / 2,
-      attack: 0.002,
-      duration: 2,
+      attack: 1 / 2,
+      duration: 1 / 2,
       detune: 10,
-    }, {
-      amplitude: 1 / 4,
-      attack: 0.001,
-      duration: 1,
-      detune: 20,
-    }, {
-      amplitude: 1 / 8,
-      attack: 0.001,
-      duration: 1,
-      detune: 20,
-    }, {
-      amplitude: 1 / 16,
-      attack: 0.001,
-      duration: 1,
-      detune: 20,
-    }, {
-      amplitude: 1 / 32,
-      attack: 0.001,
-      duration: 1,
-      detune: 20,
     }];
+
+    this.attack = 0.004;
 
     this.output = audioContext.createGain();
     this.output.connect(audioContext.destination);
@@ -494,41 +419,35 @@ class ModalSynth {
   }
 
   trigger(time, params, echo = false) {
-    const x = params.x || 0.5;
-    const y = params.y || 0.5;
-    const index = Math.floor(Math.max(0, Math.min(1, (1 - y))) * pitches.length);
-    const pitch = pitches[index];
+    const pitch = params.pitch;
     const fundamental = pitchToFreq(pitch);
-    const durationFactor = Math.max(0, Math.min(1, x));
     const nyquistFreq = 0.5 * audioContext.sampleRate;
     const partials = this.partials;
-    let maxDuration = 0;
 
-    for (var i = 0; i < partials.length; i++) {
+    time = Math.max(time, audioContext.currentTime + 0.005);
+
+    for (let i = 0; i < partials.length; i++) {
       let partial = partials[i];
 
       if (partial) {
         let freq = fundamental * (i + 1);
         let amp = partial.amplitude || 1;
-        let attack = partial.attack || 0.001;
-        let duration = (0.5 + 1.5 * durationFactor) * partial.duration || 1;
+        let attack = this.attack * partial.attack || 0.001;
         let detune = partial.detune || 0;
+        let duration = params.duration * partial.duration;
 
         if (attack > duration)
           attack = duration;
 
-        if (maxDuration < duration)
-          maxDuration = duration;
-
         if (freq < nyquistFreq) {
-          var env = audioContext.createGain();
+          const env = audioContext.createGain();
           env.connect(this.output);
           env.gain.value = 0;
           env.gain.setValueAtTime(0, time);
           env.gain.linearRampToValueAtTime(amp, time + attack);
           env.gain.exponentialRampToValueAtTime(0.0001, time + duration);
 
-          var osc = audioContext.createOscillator();
+          const osc = audioContext.createOscillator();
           osc.connect(env);
           osc.type = 'sine';
           osc.frequency.value = freq;
@@ -538,8 +457,6 @@ class ModalSynth {
         }
       }
     }
-
-    return maxDuration;
   }
 
   setGain(value) {
@@ -656,7 +573,7 @@ export class CircleRenderer {
       ctx.save();
       ctx.clearRect(0, 0, width, height);
 
-      for (var i = 0; i < this.circles.length; i++)
+      for (let i = 0; i < this.circles.length; i++)
         this.circles[i].render(ctx);
 
       ctx.restore();

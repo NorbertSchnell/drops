@@ -40,7 +40,7 @@ const audioFiles = [
 const webSocketAddr = config['server-addr'];
 const webSocketPort = config['server-port'];
 const socket = new WebSocket(`ws://${webSocketAddr}:${webSocketPort}`);
-const syncClient = new SyncClient(() => 0.001 * performance.now());
+const syncClient = new SyncClient(() => audioContext.currentTime);
 
 socket.addEventListener('open', (event) => {
   sendMessage(['get-params']);
@@ -268,6 +268,39 @@ function displayMessage(text, title = false) {
 /*********************************************
  * player
  */
+// const pitchScales = [
+//   [4800, 5200, 5700, 5900, 6200, 6700, 7200, 7600, 8100, 8300, 8600, 9100, 9600],
+//   [4800, 5300, 5700, 5900, 6200, 6700, 7200, 7700, 8100, 8300, 8600, 9100, 9600],
+//   [4800, 5300, 5700, 5800, 6200, 6700, 7200, 7700, 8100, 8200, 8600, 9100, 9600],
+//   [4800, 5300, 5700, 5800, 6300, 6700, 7200, 7700, 8100, 8200, 8700, 9100, 9600],
+//   [4800, 5300, 5600, 5800, 6300, 6700, 7200, 7700, 8000, 8200, 8700, 9100, 9600],
+//   [4900, 5300, 5600, 5800, 6300, 6700, 7300, 7700, 8000, 8200, 8700, 9100, 9700],
+//   [4900, 5300, 5600, 5800, 6300, 6600, 7300, 7700, 8000, 8200, 8700, 9000, 9700],
+//   [4900, 5300, 5600, 5900, 6300, 6600, 7300, 7700, 8000, 8300, 8700, 9000, 9700],
+//   [4900, 5200, 5600, 5900, 6300, 6600, 7300, 7600, 8000, 8300, 8700, 9000, 9700],
+//   [4900, 5200, 5700, 5900, 6300, 6600, 7300, 7600, 8100, 8300, 8700, 9000, 9700],
+//   [4900, 5200, 5700, 5900, 6200, 6600, 7300, 7600, 8100, 8300, 8600, 9000, 9700],
+//   [4900, 5200, 5700, 5900, 6200, 6700, 7300, 7600, 8100, 8300, 8600, 9100, 9700],
+// ];
+
+const pitchScales = [
+  [4800, 5000, 5200, 5500, 5700, 6000, 6200, 6400, 6700, 6900, 7200, 7400, 7600, 7900, 8100, 8400, 8600, 8800, 9100, 9300],
+  [4900, 5000, 5200, 5500, 5700, 6100, 6200, 6400, 6700, 6900, 7300, 7400, 7600, 7900, 8100, 8500, 8600, 8800, 9100, 9300],
+  [4900, 5000, 5200, 5400, 5700, 6100, 6200, 6400, 6600, 6900, 7300, 7400, 7600, 7800, 8100, 8500, 8600, 8800, 9000, 9300],
+  [4900, 5100, 5200, 5400, 5700, 6100, 6300, 6400, 6600, 6900, 7300, 7500, 7600, 7800, 8100, 8500, 8700, 8800, 9000, 9300],
+  [4900, 5100, 5200, 5400, 5600, 6100, 6300, 6400, 6600, 6800, 7300, 7500, 7600, 7800, 8000, 8500, 8700, 8800, 9000, 9200],
+  [4800, 5100, 5300, 5500, 5700, 6000, 6300, 6500, 6700, 6900, 7200, 7500, 7700, 7900, 8100, 8400, 8700, 8900, 9100, 9300],
+  [4800, 5000, 5300, 5500, 5700, 6000, 6200, 6500, 6700, 6900, 7200, 7400, 7700, 7900, 8100, 8400, 8600, 8900, 9100, 9300],
+];
+
+const scaleDuration = 60; // change scale periodically (in sec)
+
+function getPitches() {
+  const time = syncClient.getSyncTime();
+  const scaleIndex = Math.floor(time / scaleDuration) % pitchScales.length;
+  return pitchScales[scaleIndex];
+}
+
 async function startPlaying() {
   window.removeEventListener('touchend', startPlaying);
 
@@ -281,7 +314,8 @@ async function startPlaying() {
   await startSync();
 
   const syncTimeFunction = () => syncClient.getSyncTime();
-  startAudio(audioContext, syncTimeFunction, audioBuffers);
+  const convertTimeFunction = (time) => syncClient.getLocalTime(time);
+  startAudio(audioContext, syncTimeFunction, convertTimeFunction, audioBuffers);
 
   if (looper === null && circleRenderer === null) {
     circleRenderer = new CircleRenderer();
@@ -311,11 +345,16 @@ function displayActiveState(active) {
 
 function triggerSound(x, y) {
   if (looper.numLocalLoops < maxDrops) {
+    const pitches = getPitches();
+    const pitchIndex = Math.floor((1 - y) * pitches.length);
+    const pitch = pitches[pitchIndex];
+    const duration = (0.5 + 1.5 * x);
+
     const soundParams = {
       index: playerIndex,
+      x, y,
       gain: 1,
-      x: x,
-      y: y,
+      pitch, duration,
     };
 
     let time = syncClient.getSyncTime();

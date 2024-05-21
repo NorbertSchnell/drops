@@ -145,7 +145,7 @@ function setParameter(name, value, send = false) {
   if (elems) {
     const param = elems.param;
     const norm = (value - param.min) / (param.max - param.min);
-    updateNumericParameter(param, elems, value, norm, send);
+    updateNumericParameter(name, elems, value, norm, send);
   }
 }
 
@@ -158,7 +158,7 @@ function setParameterNormalized(name, norm, send = false) {
     switch (elems.frame.className) {
       case 'slider': {
         const value = (param.max - param.min) * norm + param.min;
-        updateNumericParameter(param, elems, value, norm, send);
+        updateNumericParameter(name, elems, value, norm, send);
       }
       default:
         break;
@@ -176,7 +176,7 @@ function resetParameter(name, send = false) {
       case 'slider': {
         const norm = (param.def - param.min) / (param.max - param.min);
         const value = (param.max - param.min) * norm + param.min;
-        updateNumericParameter(param, elems, value, norm, send);
+        updateNumericParameter(name, elems, value, norm, send);
         break;
       }
       case 'toggle': {
@@ -189,7 +189,36 @@ function resetParameter(name, send = false) {
   }
 }
 
-function updateNumericParameter(param, elems, value, norm, send = false) {
+function setToggle(name, value = null, send = false) {
+  const elems = controllerElements.get(name);
+
+  if (elems) {
+    if (value === null) {
+      const frame = elems.frame;
+      value = (frame.dataset.active === 'false'); // toggle value
+    }
+
+    updateBooleanParameter(name, elems, value, send);
+  }
+}
+
+function pushButton(name, send) {
+  const elems = controllerElements.get(name);
+
+  if (elems) {
+    const frame = elems.frame;
+
+    frame.classList.add('active');
+    setTimeout(() => frame.classList.remove('active'), 200);
+
+    if (send) {
+      sendMessage([name]);
+    }
+  }
+}
+
+function updateNumericParameter(name, elems, value, norm, send = false) {
+  const param = elems.param;
   const sliderElem = elems.slider;
   const numberElem = elems.number;
   const quantValue = Math.round(value / param.step);
@@ -215,45 +244,16 @@ function updateNumericParameter(param, elems, value, norm, send = false) {
   numberElem.innerText = value.toFixed(decimals);
 
   if (send) {
-    sendMessage([param.name, value]);
+    sendMessage([name, value]);
   }
 }
 
-function setToggle(name, value = null, send = false) {
-  const elems = controllerElements.get(name);
-
-  if (elems) {
-    const param = elems.param;
-    const frame = elems.frame;
-
-    if (value === null) {
-      value = (frame.dataset.active === 'false'); // toggle value
-    }
-
-    updateBooleanParameter(param, elems, value, send);
-  }
-}
-
-function updateBooleanParameter(param, elems, value, send = false) {
+function updateBooleanParameter(name, elems, value, send = false) {
   const toggleElem = elems.frame;
   toggleElem.dataset.active = value;
 
   if (send) {
-    sendMessage([param.name, value]);
+    sendMessage([name, value]);
   }
 }
 
-function pushButton(name, send) {
-  const elems = controllerElements.get(name);
-
-  if (elems) {
-    const frame = elems.frame;
-
-    frame.classList.add('active');
-    setTimeout(() => frame.classList.remove('active'), 200);
-
-    if (send) {
-      sendMessage([name]);
-    }
-  }
-}
