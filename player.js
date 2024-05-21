@@ -10,9 +10,8 @@ let playerIsActive = true;
 /*********************************************
  * websocket communication
  */
-const webSocketAddr = config['server-addr'];
-const webSocketPort = config['server-port'];
-const socket = new WebSocket(`ws://${webSocketAddr}:${webSocketPort}`);
+const webSocketUrl = config['websocket-url'];
+const socket = new WebSocket(webSocketUrl);
 const syncClient = new SyncClient(() => audioContext.currentTime);
 
 socket.addEventListener('open', (event) => {

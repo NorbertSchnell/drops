@@ -7,9 +7,8 @@ const controllerContainer = document.getElementById('controller-container');
 /*********************************************
  * websocket communication
  */
-const webSocketAddr = config['server-addr'];
-const webSocketPort = config['server-port'];
-const socket = new WebSocket(`ws://${webSocketAddr}:${webSocketPort}/controller`);
+const webSocketUrl = config['websocket-url'];
+const socket = new WebSocket(`${webSocketUrl}/controller`);
 
 // listen to opening websocket connections
 socket.addEventListener('open', (event) => {
