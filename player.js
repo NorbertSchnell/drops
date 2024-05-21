@@ -7,33 +7,6 @@ let playerIndex = null;
 let playerHasStarted = false;
 let playerIsActive = true;
 
-const audioFiles = [
-  '01-drops-A-C2.mp3',
-  '01-drops-B-C2.mp3',
-  '02-drops-A-E2.mp3',
-  '02-drops-B-E2.mp3',
-  '03-drops-A-G2.mp3',
-  '03-drops-B-G2.mp3',
-  '04-drops-A-A2.mp3',
-  '04-drops-B-A2.mp3',
-  '05-drops-A-C3.mp3',
-  '05-drops-B-C3.mp3',
-  '06-drops-A-D3.mp3',
-  '06-drops-B-D3.mp3',
-  '07-drops-A-G3.mp3',
-  '07-drops-B-G3.mp3',
-  '08-drops-A-A3.mp3',
-  '08-drops-B-A3.mp3',
-  '09-drops-A-C4.mp3',
-  '09-drops-B-C4.mp3',
-  '10-drops-A-E4.mp3',
-  '10-drops-B-E4.mp3',
-  '11-drops-A-A4.mp3',
-  '11-drops-B-A4.mp3',
-  '12-drops-A-C5.mp3',
-  '12-drops-B-C5.mp3'
-];
-
 /*********************************************
  * websocket communication
  */
@@ -215,27 +188,6 @@ function requestWebAudio() {
   });
 }
 
-// get promise that resolves when all audio files are loaded
-function loadAudioFiles() {
-  numBuffersReady = 0;
-
-  return new Promise((resolve, reject) => {
-    // load audio files into audio buffers
-    for (let i = 0; i < audioFiles.length; i++) {
-      fetch('sounds/' + audioFiles[i])
-        .then(data => data.arrayBuffer())
-        .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-        .then(decodedAudio => {
-          audioBuffers[i] = decodedAudio;
-          numBuffersReady++;
-          if (numBuffersReady === audioFiles.length) {
-            resolve();
-          }
-        });
-    }
-  });
-}
-
 /*********************************************
  * graphics
  */
@@ -306,9 +258,6 @@ async function startPlaying() {
 
   displayMessage('Checking for audio...', true);
   await requestWebAudio();
-
-  displayMessage('Loading audio...', true);
-  await loadAudioFiles();
 
   displayMessage('Synchronizing...', true);
   await startSync();
