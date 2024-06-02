@@ -203,7 +203,6 @@ export class Looper {
   constructor(renderer, loopParams, updateCount = null) {
     this.renderer = new CircleRenderer();
     this.synth = new FmSynth();
-    // this.synth = new ModalSynth();
 
     this.loopParams = loopParams;
     this.updateCount = updateCount; // function to call to update drop counter display
@@ -315,22 +314,21 @@ function pitchToFreq(pitch) {
   return refFreq * Math.exp(0.0005776226504666211 * (pitch - refPitch)); // pow(2, val / 1200)
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
 class FmSynth {
   constructor() {
     this.modIndex = 1; // moduation index
-    this.freqRatio = 1.414213562373095; // modulator frequency / carrier frequency
+    this.freqRatio = 1.001; // modulator frequency / carrier frequency
+    // this.freqRatio = 1.414213562373095; // modulator frequency / carrier frequency
     // this.freqRatio = 1.6180339886256; // modulator frequency / carrier frequency
     // this.freqRatio = 1.001; // modulator frequency / carrier frequency
 
     this.attack = 0.001;
     this.attackRatio = 1; // modulator attack time / carrier attack time (< 1)
 
-    this.duration = 2;
     this.durationRatio = 0.333; // modulator duration / carrier duration (< 1)
 
     this.detune = 0;
-    this.voiceGain = 0.5;
+    this.voiceGain = 1 / 12;
 
     this.output = audioContext.createGain();
     this.output.connect(audioContext.destination);
@@ -342,15 +340,8 @@ class FmSynth {
     const duration = params.duration;
     const detune = 10;
     const attack = Math.min(this.attack, duration);
-
     const carFreq = pitchToFreq(pitch);
     const carDetune = detune * Math.random();
-
-    const modFreq = carFreq * this.freqRatio;
-    const modDetune = detune * Math.random();
-    const modDuration = duration * this.durationRatio;
-    const modAttack = Math.min(attack * this.attackRatio, modDuration);
-    const modIndex = this.modIndex;
 
     time = Math.max(time, audioContext.currentTime + 0.005);
 
@@ -370,7 +361,14 @@ class FmSynth {
     carOsc.start(time);
     carOsc.stop(time + duration);
 
+    const modIndex = this.modIndex * Math.pow(4, params.x - 1) * Math.pow(2, (2 * params.y - 1));
+
     if (modIndex !== 0) {
+      const modFreq = carFreq * this.freqRatio;
+      const modDetune = detune * Math.random();
+      const modDuration = duration * this.durationRatio;
+      const modAttack = Math.min(attack * this.attackRatio, modDuration);
+  
       const modEnv = audioContext.createGain();
       modEnv.connect(carOsc.frequency);
       modEnv.gain.value = 0;
@@ -393,74 +391,6 @@ class FmSynth {
 
   setGain(value) {
     this.output.gain.value = this.voiceGain * value;
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-class ModalSynth {
-  constructor() {
-    this.partials = [{
-      amplitude: 1,
-      attack: 1,
-      duration: 1,
-      detune: 0,
-    }, {
-      amplitude: 1 / 2,
-      attack: 1 / 2,
-      duration: 1 / 2,
-      detune: 10,
-    }];
-
-    this.attack = 0.004;
-
-    this.output = audioContext.createGain();
-    this.output.connect(audioContext.destination);
-    this.output.gain.value = 1;
-  }
-
-  trigger(time, params, echo = false) {
-    const pitch = params.pitch;
-    const fundamental = pitchToFreq(pitch);
-    const nyquistFreq = 0.5 * audioContext.sampleRate;
-    const partials = this.partials;
-
-    time = Math.max(time, audioContext.currentTime + 0.005);
-
-    for (let i = 0; i < partials.length; i++) {
-      let partial = partials[i];
-
-      if (partial) {
-        let freq = fundamental * (i + 1);
-        let amp = partial.amplitude || 1;
-        let attack = this.attack * partial.attack || 0.001;
-        let detune = partial.detune || 0;
-        let duration = params.duration * partial.duration;
-
-        if (attack > duration)
-          attack = duration;
-
-        if (freq < nyquistFreq) {
-          const env = audioContext.createGain();
-          env.connect(this.output);
-          env.gain.value = 0;
-          env.gain.setValueAtTime(0, time);
-          env.gain.linearRampToValueAtTime(amp, time + attack);
-          env.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-
-          const osc = audioContext.createOscillator();
-          osc.connect(env);
-          osc.type = 'sine';
-          osc.frequency.value = freq;
-          osc.detune.value = detune * Math.random();
-          osc.start(time);
-          osc.stop(time + duration);
-        }
-      }
-    }
-  }
-
-  setGain(value) {
-    this.output.gain.value = value;
   }
 }
 
