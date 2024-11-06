@@ -1,14 +1,15 @@
 import paramConfig from './params.js'
-import config from './config.js'
+import appConfig from './config.js'
 
 const playerCountElem = document.getElementById('player-count');
 const readyCountElem = document.getElementById('ready-count');
-const controllerContainer = document.getElementById('controller-container');
+
 /*********************************************
  * websocket communication
  */
-const webSocketUrl = config['websocket-url'];
-const socket = new WebSocket(`${webSocketUrl}controller`);
+const webSocketAddr = appConfig['server-addr'];
+const webSocketPort = appConfig['server-port'];
+const socket = new WebSocket(`ws://${webSocketAddr}:${webSocketPort}/controller`);
 
 // listen to opening websocket connections
 socket.addEventListener('open', (event) => {

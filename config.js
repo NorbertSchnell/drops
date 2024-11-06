@@ -1,5 +1,5 @@
 export default {
   'title': 'Drops',
-  'websocket-url': '0.0.0.0',
-  'server-port': 80,
+  'server-addr': '10.0.0.20',
+  'server-port': 3000,
 }

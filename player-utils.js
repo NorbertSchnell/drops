@@ -1,3 +1,4 @@
+const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioContext = null;
 let getSyncTime = null;
 let getAudioTime = null;
@@ -249,7 +250,7 @@ export class Looper {
     this.renderer.trigger(soundParams.index, soundParams.x, soundParams.y, {
       color: soundParams.index,
       opacity: Math.sqrt(2 * soundParams.gain),
-      duration: soundParams.duration,
+      duration: 0.8 * soundParams.duration,
       velocity: 40 + soundParams.gain * 80,
     });
 

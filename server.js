@@ -11,7 +11,7 @@ let readyCount = 0;
 /****************************************************************
  * http server
  */
-const httpPort = appConfig['server-port'] || 3000;
+const httpPort = appConfig['server-port'];
 const app = express();
 
 const httpServer = http
@@ -27,118 +27,111 @@ const webSocketServer = new WebSocket.Server({ server: httpServer });
 console.log(`websocket server listening`);
 
 webSocketServer.on('connection', (socket, req) => {
-  switch (req.url) {
+  if (req.url.endsWith('/controller')) {
     // controller clients
-    case '/controller': {
-      controllerSockets.add(socket);
+    controllerSockets.add(socket);
 
-      sendCurrentParameterValues(socket);
-      sendMessage(socket, ['player-count', playerCount, readyCount]);
+    sendCurrentParameterValues(socket);
+    sendMessage(socket, ['player-count', playerCount, readyCount]);
 
-      socket.on('close', () => {
-        controllerSockets.delete(socket);
-      });
+    socket.on('close', () => {
+      controllerSockets.delete(socket);
+    });
 
-      socket.on('message', (data) => {
-        if (data.length > 0) {
-          const message = JSON.parse(data);
-          const selector = message[0];
+    socket.on('message', (data) => {
+      if (data.length > 0) {
+        const message = JSON.parse(data);
+        const selector = message[0];
 
-          switch (selector) {
-            case 'clear':
-              clearAll();
-              sendToAllControllers(['clear'], socket);
-              break;
+        switch (selector) {
+          case 'clear':
+            clearAll();
+            sendToAllControllers(['clear'], socket);
+            break;
 
-            default:
-              updateClientParameters(socket, selector, message[1]);
-              break;
-          }
-        } else {
-          socket.send(''); // socket pong
+          default:
+            updateClientParameters(socket, selector, message[1]);
+            break;
         }
-      });
+      } else {
+        socket.send(''); // socket pong
+      }
+    });
 
-      break;
-    }
-
+  } else {
     // player clients
-    default: {
-      const receiveFunction = (callback) => {
-        socket.on('message', (request) => {
-          request = JSON.parse(request);
-
-          if (request[0] === 0) { // this is a ping
-            const pingId = request[1];
-            const clientPingTime = request[2];
-            callback(pingId, clientPingTime);
-          }
-        });
-      };
-
-      const sendFunction = (pingId, clientPingTime, serverPingTime, serverPongTime) => {
-        const response = [
-          1, // this is a pong
-          pingId,
-          clientPingTime,
-          serverPingTime,
-          serverPongTime,
-        ];
-
-        socket.send(JSON.stringify(response));
-      };
-
-      syncServer.start(sendFunction, receiveFunction);
-
-      const playerIndex = addPlayerToList(socket);
-      sendMessage(socket, ['player-index', playerIndex]);
-
-      sendToAllControllers(['player-count', ++playerCount, readyCount]);
-
+    const receiveFunction = (callback) => {
       socket.on('message', (data) => {
-        if (data.length > 0) {
-          const message = JSON.parse(data);
-          const selector = message[0];
+        const request = JSON.parse(data);
 
-          switch (selector) {
-            case 'get-params': {
-              sendCurrentParameterValues(socket);
+        if (request[0] === 0) { // this is a ping
+          const pingId = request[1];
+          const clientPingTime = request[2];
+          callback(pingId, clientPingTime);
+        }
+      });
+    };
 
-              readyPlayers.add(socket);
-              sendToAllControllers(['player-count', playerCount, ++readyCount]);
+    const sendFunction = (pingId, clientPingTime, serverPingTime, serverPongTime) => {
+      const response = [
+        1, // this is a pong
+        pingId,
+        clientPingTime,
+        serverPingTime,
+        serverPongTime,
+      ];
 
-              break;
-            }
+      socket.send(JSON.stringify(response));
+    };
 
-            case 'sound': {
-              const time = message[1];
-              const soundParams = message[2];
-              const playerIndex = playerIndices.get(socket);
-              triggerEchos(playerIndex, time, soundParams);
-              break;
-            }
+    syncServer.start(sendFunction, receiveFunction);
 
-            case 'clear': {
-              clearEchoes(playerIndex);
-              break;
-            }
+    const playerIndex = addPlayerToList(socket);
+    sendMessage(socket, ['player-index', playerIndex]);
 
-            default:
-              break;
+    sendToAllControllers(['player-count', ++playerCount, readyCount]);
+
+    socket.on('message', (data) => {
+      if (data.length > 0) {
+        const message = JSON.parse(data);
+        const selector = message[0];
+
+        switch (selector) {
+          case 'get-params': {
+            sendCurrentParameterValues(socket);
+
+            readyPlayers.add(socket);
+            sendToAllControllers(['player-count', playerCount, ++readyCount]);
+
+            break;
           }
+
+          case 'sound': {
+            const time = message[1];
+            const soundParams = message[2];
+            const playerIndex = playerIndices.get(socket);
+            triggerEchos(playerIndex, time, soundParams);
+            break;
+          }
+
+          case 'clear': {
+            clearEchoes(playerIndex);
+            break;
+          }
+
+          default:
+            break;
         }
-      });
+      }
+    });
 
-      socket.on('close', () => {
-        clearEchoes(playerIndex);
+    socket.on('close', () => {
+      clearEchoes(playerIndex);
 
-        if (removePlayerFromList(socket) !== null) {
-          sendToAllControllers(['player-count', --playerCount, readyCount]);
-        }
-      });
-
-      break;
-    }
+      if (removePlayerFromList(socket) !== null) {
+        sendToAllControllers(['player-count', --playerCount, readyCount]);
+      }
+    });
   }
 });
 
