@@ -1,6 +1,5 @@
 import { SyncClient } from './ircam-sync/client.js';
 import { startAudio, Looper, CircleRenderer } from "./player-utils.js";
-import config from './config.js'
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const audioContext = new AudioContext();
@@ -11,8 +10,9 @@ let playerIsActive = true;
 /*********************************************
  * websocket communication
  */
-const webSocketAddr = config['server-addr'];
-const webSocketPort = config['server-port'];
+const webSocketAddr = window.location.hostname;
+const webSocketPort = 3000;
+
 const socket = new WebSocket(`ws://${webSocketAddr}:${webSocketPort}`);
 const syncClient = new SyncClient(() => audioContext.currentTime);
 
@@ -198,7 +198,7 @@ const playerMessage = document.getElementById('player-message');
 let canvasWidth = 0;
 let canvasHeight = 0;
 
-playerTitle.innerText = config.title;
+playerTitle.innerText = 'Drops';
 
 function adaptCanvasSize() {
   const rect = document.body.getBoundingClientRect();
@@ -486,7 +486,7 @@ function onPointerEnd(e) {
       const dY = y - pointer.y;
       const dist = pointer.dist + Math.sqrt(dX * dX + dY * dY);
 
-      if (dT < 0.25 && dist < 0.1) {
+      if (dT < 0.25 && dist < 2) {
         triggerSound(x, y);
       }
 

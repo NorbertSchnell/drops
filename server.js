@@ -2,8 +2,7 @@ import { SyncServer } from './ircam-sync/server.js';
 import express from 'express';
 import WebSocket from 'ws';
 import http from 'http';
-import appConfig from './config.js';
-import paramConfig from './params.js';
+import params from './params.js';
 
 let playerCount = 0;
 let readyCount = 0;
@@ -11,7 +10,7 @@ let readyCount = 0;
 /****************************************************************
  * http server
  */
-const httpPort = appConfig['server-port'];
+const httpPort = 3000;
 const app = express();
 
 const httpServer = http
@@ -288,7 +287,7 @@ let controllerSockets = new Set();
 const paramsByName = {};
 const paramValues = {};
 
-for (let param of paramConfig) {
+for (let param of params) {
   if (param.def !== undefined) {
     paramsByName[param.name] = param;
     paramValues[param.name] = param.def;

@@ -249,7 +249,7 @@ export class Looper {
     // trigger circle
     this.renderer.trigger(soundParams.index, soundParams.x, soundParams.y, {
       color: soundParams.index,
-      opacity: Math.sqrt(2 * soundParams.gain),
+      opacity: Math.sqrt(soundParams.gain),
       duration: 0.8 * soundParams.duration,
       velocity: 40 + soundParams.gain * 80,
     });

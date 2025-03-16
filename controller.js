@@ -1,5 +1,4 @@
-import paramConfig from './params.js'
-import appConfig from './config.js'
+import params from './params.js'
 
 const playerCountElem = document.getElementById('player-count');
 const readyCountElem = document.getElementById('ready-count');
@@ -7,8 +6,8 @@ const readyCountElem = document.getElementById('ready-count');
 /*********************************************
  * websocket communication
  */
-const webSocketAddr = appConfig['server-addr'];
-const webSocketPort = appConfig['server-port'];
+const webSocketAddr = window.location.hostname;
+const webSocketPort = 3000;
 const socket = new WebSocket(`ws://${webSocketAddr}:${webSocketPort}/controller`);
 
 // listen to opening websocket connections
@@ -72,7 +71,7 @@ function sendMessage(message) {
 const controllerElements = new Map();
 let target = null;
 
-for (let param of paramConfig) {
+for (let param of params) {
   const name = param.name;
   const container = document.querySelector(`div[data-name=${name}]`);
   const frame = container.querySelector(`.slider`) || container.querySelector(`.toggle`) || container.querySelector(`.button`);
